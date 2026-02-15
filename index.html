@@ -4,145 +4,676 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Salmonholic — Developer Tools & Games</title>
-<meta name="description" content="Salmonholic is home to free developer tools and web games. Explore Salmon Tools (17+ dev utilities) and Skill Check (timing test game).">
-<meta name="keywords" content="developer tools, online tools, JSON formatter, UUID generator, timing game, skill check, free tools">
+<meta name="description" content="Salmonholic is home to beautifully crafted developer tools and web games. No signup, no tracking — everything runs in your browser.">
+<meta name="keywords" content="developer tools, online tools, JSON formatter, UUID generator, timing game, skill check, free tools, web tools">
 <meta name="author" content="Salmonholic">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://salmonholic.com/">
 <meta property="og:title" content="Salmonholic — Developer Tools & Games">
-<meta property="og:description" content="Free developer tools and web games. No signup required.">
+<meta property="og:description" content="Beautifully crafted developer tools and web games. No signup required.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://salmonholic.com/">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐟</text></svg>">
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9910139662531641" crossorigin="anonymous"></script>
 <style>
-  :root {
-    --bg: #0a0a0f;
-    --surface: #141420;
-    --accent: #ff4466;
-    --text: #eee;
-    --text2: #999;
-    --border: #222;
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  .hero {
-    text-align: center;
-    padding: 80px 20px 40px;
-    max-width: 700px;
-  }
-  .hero h1 { font-size: 2.4em; margin-bottom: 12px; }
-  .hero p { color: var(--text2); font-size: 1.1em; line-height: 1.7; margin-bottom: 32px; }
-  .projects {
-    display: flex;
-    gap: 24px;
-    flex-wrap: wrap;
-    justify-content: center;
-    padding: 0 20px 60px;
-    max-width: 900px;
-    width: 100%;
-  }
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 32px;
-    flex: 1;
-    min-width: 280px;
-    max-width: 400px;
-    text-decoration: none;
-    color: var(--text);
-    transition: transform 0.15s, border-color 0.15s;
-  }
-  .card:hover { transform: translateY(-4px); border-color: var(--accent); }
-  .card h2 { font-size: 1.4em; margin-bottom: 8px; }
-  .card .desc { color: var(--text2); font-size: 0.9em; line-height: 1.7; margin-bottom: 16px; }
-  .card .tags { display: flex; flex-wrap: wrap; gap: 6px; }
-  .card .tag {
-    background: var(--bg);
-    padding: 3px 10px;
-    border-radius: 6px;
-    font-size: 0.75em;
-    color: var(--text2);
-  }
-  .card .cta {
-    display: inline-block;
-    margin-top: 16px;
-    color: var(--accent);
-    font-weight: 600;
-    font-size: 0.9em;
-  }
-  footer {
-    padding: 40px 20px;
-    color: var(--text2);
-    font-size: 0.8em;
-    text-align: center;
-    border-top: 1px solid var(--border);
-    width: 100%;
-    max-width: 900px;
-    line-height: 1.8;
-  }
-  footer a { color: var(--text2); }
-  @media (max-width: 640px) {
-    .hero h1 { font-size: 1.8em; }
-    .hero { padding: 40px 20px 20px; }
-    .projects { gap: 16px; }
-  }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+  --bg: #000;
+  --text: #f5f5f7;
+  --text2: #86868b;
+  --text3: #6e6e73;
+  --accent: #ff4466;
+  --blue: #2997ff;
+  --purple: #bf5af2;
+  --green: #30d158;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scroll-snap-type: y proximity;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===== NAV ===== */
+nav {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 100;
+  padding: 0 20px;
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  background: rgba(0,0,0,0.72);
+  border-bottom: 0.5px solid rgba(255,255,255,0.08);
+  transition: background 0.3s;
+}
+nav .inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 48px;
+}
+nav .logo {
+  font-weight: 700;
+  font-size: 1.05em;
+  letter-spacing: -0.3px;
+  color: var(--text);
+  text-decoration: none;
+}
+nav .links {
+  display: flex;
+  gap: 28px;
+}
+nav .links a {
+  color: var(--text2);
+  text-decoration: none;
+  font-size: 0.82em;
+  font-weight: 400;
+  transition: color 0.2s;
+}
+nav .links a:hover { color: var(--text); }
+
+/* ===== HERO ===== */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 120px 20px 80px;
+  position: relative;
+  overflow: hidden;
+  scroll-snap-align: start;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  width: 800px;
+  height: 800px;
+  background: radial-gradient(circle, rgba(255,68,102,0.12) 0%, transparent 70%);
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.hero-eyebrow {
+  font-size: 0.85em;
+  font-weight: 500;
+  color: var(--accent);
+  letter-spacing: 0.5px;
+  margin-bottom: 16px;
+  opacity: 0;
+  animation: fadeUp 0.8s ease 0.2s forwards;
+}
+.hero h1 {
+  font-size: clamp(3em, 8vw, 6em);
+  font-weight: 900;
+  letter-spacing: -2px;
+  line-height: 1.05;
+  margin-bottom: 24px;
+  opacity: 0;
+  animation: fadeUp 0.8s ease 0.4s forwards;
+}
+.hero h1 .gradient {
+  background: linear-gradient(135deg, #ff4466 0%, #bf5af2 50%, #2997ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero .subtitle {
+  font-size: clamp(1em, 2.5vw, 1.35em);
+  color: var(--text2);
+  max-width: 600px;
+  line-height: 1.6;
+  font-weight: 300;
+  margin-bottom: 48px;
+  opacity: 0;
+  animation: fadeUp 0.8s ease 0.6s forwards;
+}
+.hero-cta {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+  opacity: 0;
+  animation: fadeUp 0.8s ease 0.8s forwards;
+}
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 32px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 980px;
+  font-size: 1em;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-primary:hover { transform: scale(1.04); filter: brightness(1.1); }
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 32px;
+  background: transparent;
+  color: var(--blue);
+  border: none;
+  border-radius: 980px;
+  font-size: 1em;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-secondary:hover { text-decoration: underline; }
+
+/* Scroll indicator */
+.scroll-hint {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  animation: fadeUp 0.8s ease 1.2s forwards;
+}
+.scroll-hint::after {
+  content: '';
+  display: block;
+  width: 24px;
+  height: 40px;
+  border: 2px solid rgba(255,255,255,0.2);
+  border-radius: 12px;
+  position: relative;
+}
+.scroll-hint::before {
+  content: '';
+  position: absolute;
+  width: 4px;
+  height: 8px;
+  background: rgba(255,255,255,0.4);
+  border-radius: 2px;
+  left: 50%;
+  top: 8px;
+  transform: translateX(-50%);
+  animation: scrollDot 2s ease-in-out infinite;
+}
+@keyframes scrollDot {
+  0%, 100% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  50% { opacity: 0.3; transform: translateX(-50%) translateY(12px); }
+}
+
+/* ===== SECTION COMMON ===== */
+section {
+  padding: 140px 20px;
+  scroll-snap-align: start;
+}
+.section-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+}
+.section-label {
+  font-size: 0.8em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+.section-title {
+  font-size: clamp(2em, 5vw, 3.5em);
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: 1.1;
+  margin-bottom: 20px;
+}
+.section-desc {
+  font-size: 1.15em;
+  color: var(--text2);
+  max-width: 600px;
+  line-height: 1.7;
+  font-weight: 300;
+}
+
+/* ===== TOOLS SECTION ===== */
+#tools {
+  background: linear-gradient(180deg, #000 0%, #0a0a14 100%);
+}
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+  margin-top: 60px;
+}
+.tool-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 20px;
+  padding: 28px;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  cursor: default;
+}
+.tool-card:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.12);
+  transform: translateY(-4px);
+}
+.tool-icon {
+  font-size: 1.6em;
+  margin-bottom: 12px;
+  display: block;
+}
+.tool-card h3 {
+  font-size: 1em;
+  font-weight: 600;
+  margin-bottom: 6px;
+  letter-spacing: -0.2px;
+}
+.tool-card p {
+  font-size: 0.8em;
+  color: var(--text3);
+  line-height: 1.5;
+}
+.tools-cta {
+  text-align: center;
+  margin-top: 48px;
+}
+
+/* ===== GAME SECTION ===== */
+#game {
+  background: linear-gradient(180deg, #0a0a14 0%, #000 100%);
+  position: relative;
+  overflow: hidden;
+}
+#game::before {
+  content: '';
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(191,90,242,0.08) 0%, transparent 70%);
+  top: 20%;
+  right: -200px;
+  pointer-events: none;
+}
+.game-showcase {
+  display: flex;
+  align-items: center;
+  gap: 80px;
+  margin-top: 60px;
+}
+.game-visual {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.game-ring {
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  border: 16px solid rgba(255,255,255,0.06);
+  position: relative;
+  animation: ringPulse 3s ease-in-out infinite;
+}
+.game-ring::before {
+  content: '';
+  position: absolute;
+  top: -16px;
+  right: -16px;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 16px solid transparent;
+  border-top-color: rgba(255,215,0,0.5);
+  transform: rotate(-30deg);
+}
+.game-ring::after {
+  content: '';
+  position: absolute;
+  top: -16px;
+  right: 10px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 16px solid transparent;
+  border-top-color: rgba(255,68,102,0.8);
+  transform: rotate(-15deg);
+}
+.game-ring .center {
+  position: absolute;
+  inset: 20px;
+  border-radius: 50%;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2em;
+  font-weight: 800;
+}
+@keyframes ringPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,68,102,0); }
+  50% { box-shadow: 0 0 40px 0 rgba(255,68,102,0.15); }
+}
+.game-info { flex: 1; }
+.game-info h3 {
+  font-size: 2em;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin-bottom: 16px;
+}
+.game-info p {
+  color: var(--text2);
+  line-height: 1.7;
+  font-weight: 300;
+  margin-bottom: 12px;
+}
+.game-features {
+  list-style: none;
+  margin: 24px 0;
+}
+.game-features li {
+  padding: 8px 0;
+  color: var(--text2);
+  font-size: 0.9em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.game-features li::before {
+  content: '→';
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ===== PHILOSOPHY ===== */
+#philosophy {
+  text-align: center;
+  background: linear-gradient(180deg, #000 0%, #0a0a14 50%, #000 100%);
+}
+.principles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  margin-top: 60px;
+}
+.principle {
+  padding: 40px 28px;
+}
+.principle-icon {
+  font-size: 2.4em;
+  margin-bottom: 20px;
+  display: block;
+}
+.principle h3 {
+  font-size: 1.2em;
+  font-weight: 700;
+  margin-bottom: 10px;
+  letter-spacing: -0.2px;
+}
+.principle p {
+  color: var(--text3);
+  font-size: 0.88em;
+  line-height: 1.7;
+}
+
+/* ===== FOOTER ===== */
+footer {
+  padding: 40px 20px;
+  text-align: center;
+  border-top: 0.5px solid rgba(255,255,255,0.06);
+}
+footer p {
+  color: var(--text3);
+  font-size: 0.78em;
+  line-height: 2;
+}
+footer a { color: var(--text3); text-decoration: none; }
+footer a:hover { color: var(--text); }
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  nav .links { display: none; }
+  .game-showcase { flex-direction: column; gap: 40px; }
+  .game-visual { order: -1; }
+  .principles { grid-template-columns: 1fr; gap: 16px; }
+  .principle { padding: 24px 20px; }
+  section { padding: 80px 20px; }
+  .hero { padding: 100px 20px 60px; }
+}
 </style>
 </head>
 <body>
 
+<!-- NAV -->
+<nav>
+  <div class="inner">
+    <a class="logo" href="#">🐟 Salmonholic</a>
+    <div class="links">
+      <a href="#tools">Tools</a>
+      <a href="#game">Games</a>
+      <a href="#philosophy">About</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
 <div class="hero">
-  <h1>🐟 Salmonholic</h1>
-  <p>Free developer tools and web games — built for developers, by a developer. No signup, no tracking, everything runs in your browser.</p>
+  <div class="hero-eyebrow">Built for developers, by a developer</div>
+  <h1>Build faster.<br><span class="gradient">Ship smarter.</span></h1>
+  <p class="subtitle">Beautifully crafted developer tools and games that run entirely in your browser. No signup. No tracking. Just tools.</p>
+  <div class="hero-cta">
+    <a class="btn-primary" href="https://tools.salmonholic.com">🛠 Explore Tools</a>
+    <a class="btn-secondary" href="https://skillcheck.salmonholic.com">Play Skill Check ⚡</a>
+  </div>
+  <div class="scroll-hint"></div>
 </div>
 
-<div class="projects">
-  <a class="card" href="https://tools.salmonholic.com">
-    <h2>🛠 Salmon Tools</h2>
-    <p class="desc">A comprehensive collection of 17+ developer utilities in a single page. JSON formatter, timestamp converter, UUID generator, HTTP client, regex tester, and much more.</p>
-    <div class="tags">
-      <span class="tag">JSON Formatter</span>
-      <span class="tag">Timestamp</span>
-      <span class="tag">URL Encoder</span>
-      <span class="tag">Base64</span>
-      <span class="tag">JWT Decoder</span>
-      <span class="tag">UUID/GAID/IDFA</span>
-      <span class="tag">Regex</span>
-      <span class="tag">SQL</span>
-      <span class="tag">Hash</span>
-      <span class="tag">HTTP Client</span>
-      <span class="tag">+7 more</span>
+<!-- TOOLS -->
+<section id="tools">
+  <div class="section-inner">
+    <div class="reveal">
+      <div class="section-label">Developer Tools</div>
+      <div class="section-title">17+ tools.<br>One page. Zero frameworks.</div>
+      <p class="section-desc">Every tool runs client-side. Your data never leaves your browser. Fast, private, and always available — even offline.</p>
     </div>
-    <span class="cta">Open Salmon Tools →</span>
-  </a>
 
-  <a class="card" href="https://skillcheck.salmonholic.com">
-    <h2>⚡ Skill Check</h2>
-    <p class="desc">Test your timing precision with this addictive skill check challenge. Inspired by Dead by Daylight — difficulty scales from Easy to Nightmare as you survive. 3 lives, infinite rounds.</p>
-    <div class="tags">
-      <span class="tag">Timing Test</span>
-      <span class="tag">Reaction Speed</span>
-      <span class="tag">Infinite Mode</span>
-      <span class="tag">Auto Difficulty</span>
-      <span class="tag">Share Results</span>
+    <div class="tools-grid reveal">
+      <div class="tool-card">
+        <span class="tool-icon">{ }</span>
+        <h3>JSON Formatter</h3>
+        <p>Beautify, minify, validate JSON and convert to TypeScript interfaces.</p>
+      </div>
+      <div class="tool-card">
+        <span class="tool-icon">🕐</span>
+        <h3>Timestamp Converter</h3>
+        <p>Unix timestamp to date conversion with KST, UTC, ISO 8601 and relative time.</p>
+      </div>
+      <div class="tool-card">
+        <span class="tool-icon">🔗</span>
+        <h3>URL Encoder/Decoder</h3>
+        <p>Encode, decode URLs and parse query parameters for safe URL construction.</p>
+      </div>
+      <div class="tool-card">
+        <span class="tool-icon">🔤</span>
+        <h3>Base64 Enc & Dec</h3>
+        <p>Encode and decode Base64 with full Unicode support including CJK characters.</p>
+      </div>
+      <div class="tool-card">
+        <span class="tool-icon">🎫</span>
+        <h3>JWT Decoder</h3>
+        <p>Decode JSON Web Tokens, inspect claims, and check token expiry status.</p>
+      </div>
+      <div class="tool-card">
+        <span class="tool-icon">🔍</span>
+        <h3>Regex Tester</h3>
+        <p>Test patterns with real-time highlighting, capture groups, and flag support.</p>
+      </div>
+      <div class="tool-card">
+        <span class="tool-icon">🗃</span>
+        <h3>SQL Formatter</h3>
+        <p>Format and beautify SQL queries with indentation and keyword case options.</p>
+      </div>
+      <div class="tool-card">
+        <span class="tool-icon">🎨</span>
+        <h3>Color Converter</h3>
+        <p>Convert between HEX, RGB, HSL with a visual color picker and CSS output.</p>
+      </div>
+      <div class="tool-card">
+        <span class="tool-icon">🔐</span>
+        <h3>Hash Generator</h3>
+        <p>Generate SHA-1, SHA-256, SHA-384, SHA-512 hashes using Web Crypto API.</p>
+      </div>
+      <div class="tool-card">
+        <span class="tool-icon">🌐</span>
+        <h3>HTTP Client</h3>
+        <p>Send requests with custom methods, headers, body. Full response inspection.</p>
+      </div>
+      <div class="tool-card">
+        <span class="tool-icon">🔀</span>
+        <h3>Redirect Tracer</h3>
+        <p>Trace redirect chains, visualize hops, detect loops and final destinations.</p>
+      </div>
+      <div class="tool-card">
+        <span class="tool-icon">🆔</span>
+        <h3>UUID / GAID / IDFA</h3>
+        <p>Generate UUID v4, Android GAID, and Apple IDFA identifiers in bulk.</p>
+      </div>
     </div>
-    <span class="cta">Play Skill Check →</span>
-  </a>
-</div>
 
+    <div class="tools-cta reveal">
+      <a class="btn-primary" href="https://tools.salmonholic.com" style="margin-top:20px;">Open Salmon Tools →</a>
+    </div>
+  </div>
+</section>
+
+<!-- GAME -->
+<section id="game">
+  <div class="section-inner">
+    <div class="reveal">
+      <div class="section-label">Web Games</div>
+      <div class="section-title">Take a break.<br>Test your reflexes.</div>
+      <p class="section-desc">Games that challenge your precision and timing. Built with pure JavaScript and Canvas — no frameworks, no bloat.</p>
+    </div>
+
+    <div class="game-showcase reveal">
+      <div class="game-visual">
+        <div class="game-ring">
+          <div class="center">⚡</div>
+        </div>
+      </div>
+      <div class="game-info">
+        <h3>Skill Check</h3>
+        <p>Inspired by Dead by Daylight — hit the timing window as the needle spins around the ring. How far can you go?</p>
+        <ul class="game-features">
+          <li>Progressive difficulty: Easy → Nightmare</li>
+          <li>3 lives — miss three times and it's over</li>
+          <li>Combo multiplier for consecutive hits</li>
+          <li>Share your score with a preview link</li>
+          <li>Global-ready with S/A/B/C/D grading</li>
+        </ul>
+        <a class="btn-primary" href="https://skillcheck.salmonholic.com">Play Now →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PHILOSOPHY -->
+<section id="philosophy">
+  <div class="section-inner">
+    <div class="reveal">
+      <div class="section-label">Our Philosophy</div>
+      <div class="section-title" style="max-width:600px;margin:0 auto 20px;">Simple tools.<br>Done right.</div>
+    </div>
+
+    <div class="principles reveal">
+      <div class="principle">
+        <span class="principle-icon">🔒</span>
+        <h3>Privacy First</h3>
+        <p>Everything runs in your browser. No data is ever sent to our servers. No cookies, no tracking, no analytics on your data.</p>
+      </div>
+      <div class="principle">
+        <span class="principle-icon">⚡</span>
+        <h3>Blazing Fast</h3>
+        <p>Zero frameworks. Zero dependencies. Single HTML files that load instantly. No webpack, no React, no build step — just code.</p>
+      </div>
+      <div class="principle">
+        <span class="principle-icon">🎯</span>
+        <h3>Developer Focus</h3>
+        <p>Built by a developer with 14 years of experience. Every tool solves a real problem. No fluff, no feature creep.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
 <footer>
-  <p>All tools run client-side — your data never leaves your browser.</p>
-  <p>© 2026 Salmonholic. Built with ❤️ and zero frameworks.</p>
+  <p>
+    <a href="https://tools.salmonholic.com">Salmon Tools</a> · 
+    <a href="https://skillcheck.salmonholic.com">Skill Check</a>
+  </p>
+  <p>© 2026 Salmonholic. Crafted with precision and zero frameworks.</p>
 </footer>
+
+<script>
+// Scroll reveal
+const reveals = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((entry, i) => {
+    if (entry.isIntersecting) {
+      setTimeout(() => entry.target.classList.add('visible'), i * 100);
+      observer.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
+reveals.forEach(el => observer.observe(el));
+
+// Nav background on scroll
+const nav = document.querySelector('nav');
+window.addEventListener('scroll', () => {
+  nav.style.background = window.scrollY > 50 ? 'rgba(0,0,0,0.88)' : 'rgba(0,0,0,0.72)';
+});
+
+// Smooth anchor scroll
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth' });
+  });
+});
+</script>
 
 </body>
 </html>
