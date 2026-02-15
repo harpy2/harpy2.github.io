@@ -3,10 +3,146 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>salmonholic</title>
-<meta http-equiv="refresh" content="0;url=https://tools.salmonholic.com">
+<title>Salmonholic — Developer Tools & Games</title>
+<meta name="description" content="Salmonholic is home to free developer tools and web games. Explore Salmon Tools (17+ dev utilities) and Skill Check (timing test game).">
+<meta name="keywords" content="developer tools, online tools, JSON formatter, UUID generator, timing game, skill check, free tools">
+<meta name="author" content="Salmonholic">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://salmonholic.com/">
+<meta property="og:title" content="Salmonholic — Developer Tools & Games">
+<meta property="og:description" content="Free developer tools and web games. No signup required.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://salmonholic.com/">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐟</text></svg>">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9910139662531641" crossorigin="anonymous"></script>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #141420;
+    --accent: #ff4466;
+    --text: #eee;
+    --text2: #999;
+    --border: #222;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .hero {
+    text-align: center;
+    padding: 80px 20px 40px;
+    max-width: 700px;
+  }
+  .hero h1 { font-size: 2.4em; margin-bottom: 12px; }
+  .hero p { color: var(--text2); font-size: 1.1em; line-height: 1.7; margin-bottom: 32px; }
+  .projects {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 0 20px 60px;
+    max-width: 900px;
+    width: 100%;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    flex: 1;
+    min-width: 280px;
+    max-width: 400px;
+    text-decoration: none;
+    color: var(--text);
+    transition: transform 0.15s, border-color 0.15s;
+  }
+  .card:hover { transform: translateY(-4px); border-color: var(--accent); }
+  .card h2 { font-size: 1.4em; margin-bottom: 8px; }
+  .card .desc { color: var(--text2); font-size: 0.9em; line-height: 1.7; margin-bottom: 16px; }
+  .card .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .card .tag {
+    background: var(--bg);
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 0.75em;
+    color: var(--text2);
+  }
+  .card .cta {
+    display: inline-block;
+    margin-top: 16px;
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 0.9em;
+  }
+  footer {
+    padding: 40px 20px;
+    color: var(--text2);
+    font-size: 0.8em;
+    text-align: center;
+    border-top: 1px solid var(--border);
+    width: 100%;
+    max-width: 900px;
+    line-height: 1.8;
+  }
+  footer a { color: var(--text2); }
+  @media (max-width: 640px) {
+    .hero h1 { font-size: 1.8em; }
+    .hero { padding: 40px 20px 20px; }
+    .projects { gap: 16px; }
+  }
+</style>
 </head>
 <body>
-<p>Redirecting to <a href="https://tools.salmonholic.com">tools.salmonholic.com</a>...</p>
+
+<div class="hero">
+  <h1>🐟 Salmonholic</h1>
+  <p>Free developer tools and web games — built for developers, by a developer. No signup, no tracking, everything runs in your browser.</p>
+</div>
+
+<div class="projects">
+  <a class="card" href="https://tools.salmonholic.com">
+    <h2>🛠 Salmon Tools</h2>
+    <p class="desc">A comprehensive collection of 17+ developer utilities in a single page. JSON formatter, timestamp converter, UUID generator, HTTP client, regex tester, and much more.</p>
+    <div class="tags">
+      <span class="tag">JSON Formatter</span>
+      <span class="tag">Timestamp</span>
+      <span class="tag">URL Encoder</span>
+      <span class="tag">Base64</span>
+      <span class="tag">JWT Decoder</span>
+      <span class="tag">UUID/GAID/IDFA</span>
+      <span class="tag">Regex</span>
+      <span class="tag">SQL</span>
+      <span class="tag">Hash</span>
+      <span class="tag">HTTP Client</span>
+      <span class="tag">+7 more</span>
+    </div>
+    <span class="cta">Open Salmon Tools →</span>
+  </a>
+
+  <a class="card" href="https://skillcheck.salmonholic.com">
+    <h2>⚡ Skill Check</h2>
+    <p class="desc">Test your timing precision with this addictive skill check challenge. Inspired by Dead by Daylight — difficulty scales from Easy to Nightmare as you survive. 3 lives, infinite rounds.</p>
+    <div class="tags">
+      <span class="tag">Timing Test</span>
+      <span class="tag">Reaction Speed</span>
+      <span class="tag">Infinite Mode</span>
+      <span class="tag">Auto Difficulty</span>
+      <span class="tag">Share Results</span>
+    </div>
+    <span class="cta">Play Skill Check →</span>
+  </a>
+</div>
+
+<footer>
+  <p>All tools run client-side — your data never leaves your browser.</p>
+  <p>© 2026 Salmonholic. Built with ❤️ and zero frameworks.</p>
+</footer>
+
 </body>
 </html>
