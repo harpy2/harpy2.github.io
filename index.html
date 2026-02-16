@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Salmonholic — Developer Tools & Games</title>
-<meta name="description" content="Salmonholic is home to beautifully crafted developer tools and web games. No signup, no tracking — everything runs in your browser.">
-<meta name="keywords" content="developer tools, online tools, JSON formatter, UUID generator, timing game, skill check, free tools, web tools">
+<title>Salmonholic — Developer Tools, Escape Room & Puzzle Games</title>
+<meta name="description" content="Salmonholic offers 17+ developer tools, QUBE escape room puzzles, YesNo lateral thinking games, and Skill Check timing challenges. Free, no signup, runs in your browser.">
+<meta name="keywords" content="developer tools, online tools, JSON formatter, UUID generator, escape room, puzzle game, 방탈출, 퍼즐, 바다거북수프, lateral thinking, skill check, free tools, web tools, QUBE, YesNo">
 <meta name="author" content="Salmonholic">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://salmonholic.com/">
-<meta property="og:title" content="Salmonholic — Developer Tools & Games">
-<meta property="og:description" content="Beautifully crafted developer tools and web games. No signup required.">
+<meta property="og:title" content="Salmonholic — Developer Tools, Escape Room & Puzzle Games">
+<meta property="og:description" content="17+ developer tools, escape room puzzles, and brain games. Free, no signup required.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://salmonholic.com/">
 <meta name="twitter:card" content="summary_large_image">
@@ -140,9 +140,36 @@ nav .links a:hover { color: var(--text); }
   max-width: 600px;
   line-height: 1.6;
   font-weight: 300;
-  margin-bottom: 48px;
+  margin-bottom: 40px;
   opacity: 0;
   animation: fadeUp 0.8s ease 0.6s forwards;
+}
+.hero-stats {
+  display: flex;
+  gap: 48px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 48px;
+  opacity: 0;
+  animation: fadeUp 0.8s ease 0.7s forwards;
+}
+.hero-stat {
+  text-align: center;
+}
+.hero-stat .num {
+  font-size: 2.2em;
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: 1.2;
+}
+.hero-stat .num.tools-color { color: var(--blue); }
+.hero-stat .num.games-color { color: var(--purple); }
+.hero-stat .label {
+  font-size: 0.78em;
+  color: var(--text3);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 .hero-cta {
   display: flex;
@@ -150,7 +177,7 @@ nav .links a:hover { color: var(--text); }
   flex-wrap: wrap;
   justify-content: center;
   opacity: 0;
-  animation: fadeUp 0.8s ease 0.8s forwards;
+  animation: fadeUp 0.8s ease 0.9s forwards;
 }
 .btn-primary {
   display: inline-flex;
@@ -252,9 +279,146 @@ section {
   font-weight: 300;
 }
 
+/* ===== GAMES SECTION ===== */
+#games {
+  background: linear-gradient(180deg, #000 0%, #0a0a14 100%);
+  position: relative;
+  overflow: hidden;
+}
+#games::before {
+  content: '';
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(191,90,242,0.08) 0%, transparent 70%);
+  top: 20%;
+  right: -200px;
+  pointer-events: none;
+}
+.games-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  margin-top: 60px;
+}
+.game-card {
+  border-radius: 24px;
+  padding: 48px 44px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.4s ease;
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--text);
+  display: block;
+  min-height: 280px;
+}
+.game-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+.game-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.15;
+  transition: opacity 0.4s;
+  pointer-events: none;
+}
+.game-card:hover::before { opacity: 0.25; }
+
+/* QUBE card */
+.game-card.qube {
+  background: linear-gradient(135deg, #1a0a2e 0%, #0d0d1a 60%, #1a0a2e 100%);
+  border: 1px solid rgba(191,90,242,0.2);
+}
+.game-card.qube::before {
+  background: radial-gradient(circle at 80% 20%, rgba(191,90,242,0.3), transparent 60%);
+}
+.game-card.qube:hover { border-color: rgba(191,90,242,0.4); }
+
+/* YesNo card */
+.game-card.yesno {
+  background: linear-gradient(135deg, #0a1a0f 0%, #0d0d1a 60%, #0a1a0f 100%);
+  border: 1px solid rgba(48,209,88,0.2);
+}
+.game-card.yesno::before {
+  background: radial-gradient(circle at 80% 20%, rgba(48,209,88,0.3), transparent 60%);
+}
+.game-card.yesno:hover { border-color: rgba(48,209,88,0.4); }
+
+/* Skill Check card */
+.game-card.skillcheck {
+  background: linear-gradient(135deg, #1a0a0a 0%, #0d0d1a 60%, #1a0a0a 100%);
+  border: 1px solid rgba(255,68,102,0.2);
+}
+.game-card.skillcheck::before {
+  background: radial-gradient(circle at 80% 20%, rgba(255,68,102,0.3), transparent 60%);
+}
+.game-card.skillcheck:hover { border-color: rgba(255,68,102,0.4); }
+
+.game-card-icon {
+  font-size: 3em;
+  margin-bottom: 20px;
+  display: block;
+}
+.game-card-title {
+  font-size: 2em;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin-bottom: 8px;
+}
+.game-card-tagline {
+  font-size: 1.2em;
+  font-weight: 300;
+  color: var(--text2);
+  margin-bottom: 20px;
+}
+.game-card-desc {
+  font-size: 0.9em;
+  color: var(--text3);
+  line-height: 1.7;
+  max-width: 500px;
+}
+.game-card-features {
+  list-style: none;
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.game-card-features li {
+  font-size: 0.75em;
+  color: var(--text2);
+  background: rgba(255,255,255,0.06);
+  padding: 5px 12px;
+  border-radius: 100px;
+  font-weight: 500;
+}
+.game-card-arrow {
+  position: absolute;
+  right: 44px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.5em;
+  color: var(--text3);
+  transition: transform 0.3s, color 0.3s;
+}
+.game-card:hover .game-card-arrow {
+  transform: translateY(-50%) translateX(6px);
+  color: var(--text);
+}
+
+/* Top two cards side by side */
+.games-top {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
 /* ===== TOOLS SECTION ===== */
 #tools {
-  background: linear-gradient(180deg, #000 0%, #0a0a14 100%);
+  background: linear-gradient(180deg, #0a0a14 0%, #000 100%);
 }
 .tools-grid {
   display: grid;
@@ -294,112 +458,6 @@ section {
 .tools-cta {
   text-align: center;
   margin-top: 48px;
-}
-
-/* ===== GAME SECTION ===== */
-#game {
-  background: linear-gradient(180deg, #0a0a14 0%, #000 100%);
-  position: relative;
-  overflow: hidden;
-}
-#game::before {
-  content: '';
-  position: absolute;
-  width: 600px;
-  height: 600px;
-  background: radial-gradient(circle, rgba(191,90,242,0.08) 0%, transparent 70%);
-  top: 20%;
-  right: -200px;
-  pointer-events: none;
-}
-.game-showcase {
-  display: flex;
-  align-items: center;
-  gap: 80px;
-  margin-top: 60px;
-}
-.game-visual {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.game-ring {
-  width: 280px;
-  height: 280px;
-  border-radius: 50%;
-  border: 16px solid rgba(255,255,255,0.06);
-  position: relative;
-  animation: ringPulse 3s ease-in-out infinite;
-}
-.game-ring::before {
-  content: '';
-  position: absolute;
-  top: -16px;
-  right: -16px;
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  border: 16px solid transparent;
-  border-top-color: rgba(255,215,0,0.5);
-  transform: rotate(-30deg);
-}
-.game-ring::after {
-  content: '';
-  position: absolute;
-  top: -16px;
-  right: 10px;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 16px solid transparent;
-  border-top-color: rgba(255,68,102,0.8);
-  transform: rotate(-15deg);
-}
-.game-ring .center {
-  position: absolute;
-  inset: 20px;
-  border-radius: 50%;
-  background: var(--bg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2em;
-  font-weight: 800;
-}
-@keyframes ringPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(255,68,102,0); }
-  50% { box-shadow: 0 0 40px 0 rgba(255,68,102,0.15); }
-}
-.game-info { flex: 1; }
-.game-info h3 {
-  font-size: 2em;
-  font-weight: 800;
-  letter-spacing: -0.5px;
-  margin-bottom: 16px;
-}
-.game-info p {
-  color: var(--text2);
-  line-height: 1.7;
-  font-weight: 300;
-  margin-bottom: 12px;
-}
-.game-features {
-  list-style: none;
-  margin: 24px 0;
-}
-.game-features li {
-  padding: 8px 0;
-  color: var(--text2);
-  font-size: 0.9em;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.game-features li::before {
-  content: '→';
-  color: var(--accent);
-  font-weight: 600;
 }
 
 /* ===== PHILOSOPHY ===== */
@@ -465,12 +523,15 @@ footer a:hover { color: var(--text); }
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   nav .links { display: none; }
-  .game-showcase { flex-direction: column; gap: 40px; }
-  .game-visual { order: -1; }
+  .games-top { grid-template-columns: 1fr; }
+  .game-card { padding: 32px 28px; min-height: auto; }
+  .game-card-title { font-size: 1.5em; }
+  .game-card-arrow { display: none; }
   .principles { grid-template-columns: 1fr; gap: 16px; }
   .principle { padding: 24px 20px; }
   section { padding: 80px 20px; }
   .hero { padding: 100px 20px 60px; }
+  .hero-stats { gap: 32px; }
 }
 </style>
 </head>
@@ -481,8 +542,8 @@ footer a:hover { color: var(--text); }
   <div class="inner">
     <a class="logo" href="#">🐟 Salmonholic</a>
     <div class="links">
+      <a href="#games">Games</a>
       <a href="#tools">Tools</a>
-      <a href="#game">Games</a>
       <a href="#philosophy">About</a>
     </div>
   </div>
@@ -490,15 +551,79 @@ footer a:hover { color: var(--text); }
 
 <!-- HERO -->
 <div class="hero">
-  <div class="hero-eyebrow">Built for developers, by a developer</div>
-  <h1>Build faster.<br><span class="gradient">Ship smarter.</span></h1>
-  <p class="subtitle">Beautifully crafted developer tools and games that run entirely in your browser. No signup. No tracking. Just tools.</p>
+  <div class="hero-eyebrow">Free. No signup. No tracking.</div>
+  <h1>Tools & Games.<br><span class="gradient">All in your browser.</span></h1>
+  <p class="subtitle">Developer tools and puzzle games crafted with care. Everything runs client-side — your data never leaves your browser.</p>
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="num tools-color">17+</div>
+      <div class="label">Developer Tools</div>
+    </div>
+    <div class="hero-stat">
+      <div class="num games-color">3</div>
+      <div class="label">Web Games</div>
+    </div>
+  </div>
   <div class="hero-cta">
-    <a class="btn-primary" href="https://tools.salmonholic.com">🛠 Explore Tools</a>
-    <a class="btn-secondary" href="https://skillcheck.salmonholic.com">Play Skill Check ⚡</a>
+    <a class="btn-primary" href="#games">🎮 Explore Games</a>
+    <a class="btn-secondary" href="#tools">🛠 Developer Tools →</a>
   </div>
   <div class="scroll-hint"></div>
 </div>
+
+<!-- GAMES -->
+<section id="games">
+  <div class="section-inner">
+    <div class="reveal">
+      <div class="section-label">Web Games</div>
+      <div class="section-title">Play. Think.<br>Escape.</div>
+      <p class="section-desc">Puzzle games that challenge your brain. Built with pure JavaScript — no frameworks, no bloat, no signup.</p>
+    </div>
+
+    <div class="games-grid reveal">
+      <div class="games-top">
+        <a class="game-card qube" href="https://qube.salmonholic.com">
+          <span class="game-card-icon">🔒</span>
+          <div class="game-card-title">QUBE</div>
+          <div class="game-card-tagline">풀어라. 탈출하라.</div>
+          <p class="game-card-desc">3개 세계관, 12개 시리즈, 37챕터의 방탈출 추리 퍼즐. 연결된 스토리와 반전 엔딩.</p>
+          <ul class="game-card-features">
+            <li>방탈출 추리</li>
+            <li>37 챕터</li>
+            <li>7+ 미니게임</li>
+            <li>공포 세계관</li>
+          </ul>
+          <span class="game-card-arrow">→</span>
+        </a>
+        <a class="game-card yesno" href="https://yesno.salmonholic.com">
+          <span class="game-card-icon">🐢</span>
+          <div class="game-card-title">YesNo</div>
+          <div class="game-card-tagline">질문하라. 추리하라.</div>
+          <p class="game-card-desc">AI 기반 바다거북 수프 — 예/아니오 질문으로 미스터리의 진실을 파헤치세요.</p>
+          <ul class="game-card-features">
+            <li>수평사고 퍼즐</li>
+            <li>AI 출제 & 판정</li>
+            <li>무한 문제</li>
+          </ul>
+          <span class="game-card-arrow">→</span>
+        </a>
+      </div>
+      <a class="game-card skillcheck" href="https://skillcheck.salmonholic.com">
+        <span class="game-card-icon">⚡</span>
+        <div class="game-card-title">Skill Check</div>
+        <div class="game-card-tagline">Test your reflexes.</div>
+        <p class="game-card-desc">Inspired by Dead by Daylight — hit the timing window as the needle spins. Progressive difficulty from Easy to Nightmare. 3 lives, combo multiplier, global grading.</p>
+        <ul class="game-card-features">
+          <li>Timing Game</li>
+          <li>5 Difficulties</li>
+          <li>Score Sharing</li>
+          <li>S~D Grading</li>
+        </ul>
+        <span class="game-card-arrow">→</span>
+      </a>
+    </div>
+  </div>
+</section>
 
 <!-- TOOLS -->
 <section id="tools">
@@ -578,37 +703,6 @@ footer a:hover { color: var(--text); }
   </div>
 </section>
 
-<!-- GAME -->
-<section id="game">
-  <div class="section-inner">
-    <div class="reveal">
-      <div class="section-label">Web Games</div>
-      <div class="section-title">Take a break.<br>Test your reflexes.</div>
-      <p class="section-desc">Games that challenge your precision and timing. Built with pure JavaScript and Canvas — no frameworks, no bloat.</p>
-    </div>
-
-    <div class="game-showcase reveal">
-      <div class="game-visual">
-        <div class="game-ring">
-          <div class="center">⚡</div>
-        </div>
-      </div>
-      <div class="game-info">
-        <h3>Skill Check</h3>
-        <p>Inspired by Dead by Daylight — hit the timing window as the needle spins around the ring. How far can you go?</p>
-        <ul class="game-features">
-          <li>Progressive difficulty: Easy → Nightmare</li>
-          <li>3 lives — miss three times and it's over</li>
-          <li>Combo multiplier for consecutive hits</li>
-          <li>Share your score with a preview link</li>
-          <li>Global-ready with S/A/B/C/D grading</li>
-        </ul>
-        <a class="btn-primary" href="https://skillcheck.salmonholic.com">Play Now →</a>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- PHILOSOPHY -->
 <section id="philosophy">
   <div class="section-inner">
@@ -641,6 +735,8 @@ footer a:hover { color: var(--text); }
 <footer>
   <p>
     <a href="https://tools.salmonholic.com">Salmon Tools</a> · 
+    <a href="https://qube.salmonholic.com">QUBE</a> · 
+    <a href="https://yesno.salmonholic.com">YesNo</a> · 
     <a href="https://skillcheck.salmonholic.com">Skill Check</a>
   </p>
   <p>© 2026 Salmonholic. Crafted with precision and zero frameworks.</p>
