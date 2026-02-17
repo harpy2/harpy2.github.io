@@ -269,6 +269,13 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 <!-- OVERLAYS -->
 <div class="overlay" id="overlay-hunt">
 <div class="overlay-header"><h2>⚔️ 사냥 — <span id="hunt-floor">1</span>층</h2><div style="display:flex;gap:8px;align-items:center"><span id="auto-hunt-indicator"></span><button class="close-btn" onclick="closeOverlay('hunt')">✕</button></div></div>
+<div style="padding:8px 16px;display:flex;gap:8px;flex-wrap:wrap;font-size:12px;background:rgba(0,0,0,.3);border-bottom:1px solid var(--gray)">
+<span>❤️ <span id="hunt-hp" style="color:var(--danger)">100/100</span></span>
+<span>🍖 <span id="hunt-hunger" style="color:var(--gold)">100%</span></span>
+<span>⚡ <span id="hunt-mood" style="color:var(--cyan)">100%</span></span>
+<span>⭐ Lv.<span id="hunt-level">1</span></span>
+<span>💰 <span id="hunt-gold">0</span></span>
+</div>
 <div class="overlay-body"><div class="hunt-log" id="hunt-log"></div></div>
 <div class="hunt-controls">
 <button class="btn" onclick="startHunt()" id="hunt-btn">🗡️ 사냥 시작</button>
@@ -494,7 +501,8 @@ function closeOverlay(name){document.getElementById('overlay-'+name).classList.r
 
 // ===== HUNTING =====
 let huntInProgress=false;
-function renderHunt(){document.getElementById('hunt-floor').textContent=G.floor;updateAutoHuntUI()}
+function renderHunt(){document.getElementById('hunt-floor').textContent=G.floor;updateAutoHuntUI();updateHuntStatus()}
+function updateHuntStatus(){var h=document.getElementById('hunt-hp');if(h){h.textContent=Math.floor(G.hp)+'/'+G.maxHP;document.getElementById('hunt-hunger').textContent=Math.floor(G.hunger)+'%';document.getElementById('hunt-mood').textContent=Math.floor(G.mood)+'%';document.getElementById('hunt-level').textContent=G.level;document.getElementById('hunt-gold').textContent=G.gold}}
 function updateAutoHuntUI(){document.getElementById('auto-hunt-indicator').innerHTML=G.autoHunt?'<span class="auto-hunt-badge">자동</span>':'';document.getElementById('auto-hunt-btn').textContent=G.autoHunt?'⏹️ 자동 중지':'🔄 자동사냥'}
 function toggleAutoHunt(){G.autoHunt=!G.autoHunt;updateAutoHuntUI();if(G.autoHunt&&!huntInProgress)startHunt()}
 
@@ -551,11 +559,11 @@ while(G.exp>=100){G.exp-=100;G.level++;G.maxHP+=20;G.atk+=3;G.def+=2;G.hp=G.maxH
 }else{
 await addHuntLine('전투 패배... 💀','damage',log);
 G.mood=Math.max(0,G.mood-10)}
-updateBars();renderCharacter();renderEquipRow();saveGame();
+updateBars();updateHuntStatus();renderCharacter();renderEquipRow();saveGame();
 huntInProgress=false;document.getElementById('hunt-btn').disabled=false;
 if(G.autoHunt&&G.hp>G.maxHP*0.2){setTimeout(()=>{if(G.autoHunt)startHunt()},1500)}else{G.autoHunt=false;updateAutoHuntUI()}}
 
-function addHuntLine(text,cls,log){return new Promise(r=>{const d=document.createElement('div');d.className='hunt-line '+cls;d.textContent=text;log.appendChild(d);log.scrollTop=log.scrollHeight;setTimeout(r,200)})}
+function addHuntLine(text,cls,log){return new Promise(r=>{const d=document.createElement('div');d.className='hunt-line '+cls;d.textContent=text;log.appendChild(d);log.scrollTop=log.scrollHeight;updateHuntStatus();setTimeout(r,200)})}
 function wait(ms){return new Promise(r=>setTimeout(r,ms))}
 
 // ===== ITEM GENERATION =====
