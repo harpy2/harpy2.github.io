@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Dark Realms - ARPG Prototype</title>
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { 
+  background: #000; overflow: hidden; 
+  display: flex; justify-content: center; align-items: center; 
+  height: 100vh; height: 100dvh;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  overscroll-behavior: none;
+  position: fixed;
+  width: 100%;
+}
+</style>
+</head>
+<body>
+<script>
+// ============================================================
+// DARK REALMS — Single-file Phaser 3 ARPG Prototype
+// ============================================================
+
+const WORLD_W = 3200, WORLD_H = 3200;
+const TILE = 64;
+const MONSTER_COUNT = { melee: 12, ranged: 8, boss: 2 };
+const IS_TOUCH = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+
+// ---------- helpers ----------
+function rnd(a,b){ return Phaser.Math.Between(a,b); }
+function dist(a,b){ return Phaser.Math.Distance.Between(a.x,a.y,b.x,b.y); }
+function angle(a,b){ return Math.atan2(b.y-a.y, b.x-a.x); }
+
+// Prevent all default touch behaviors
+document.addEventListener('touchstart', e => { if(e.target.tagName === 'CANVAS') e.preventDefault(); }, {passive:false});
+document.addEventListener('touchmove', e => e.preventDefault(), {passive:false});
+document.addEventListener('touchend', e => { if(e.target.tagName === 'CANVAS') e.preventDefault(); }, {passive:false});
+document.addEventListener('gesturestart', e => e.preventDefault());
+document.addEventListener('gesturechange', e => e.preventDefault());
+
+// ---------- MAIN SCENE ----------
+class GameScene extends Phaser.Scene {
+  constructor(){ super('Game'); }
+
+  create(){
+    this.cameras.main.setBackgroundColor('#1a1a2e');
+    this.physics.world.setBounds(0,0,WORLD_W,WORLD_H);
+
+    // --- ground tiles ---
+    const gfx = this.add.graphics();
+    for(let x=0;x<WORLD_W;x+=TILE){
+      for(let y=0;y<WORLD_H;y+=TILE){
+        const shade = 0x16213e + rnd(-5,5)*0x010101;
+        gfx.fillStyle(shade,1);
+        gfx.fillRect(x,y,TILE,TILE);
+        gfx.lineStyle(1,0x0f3460,0.3);
+        gfx.strokeRect(x,y,TILE,TILE);
+      }
+    }
+
+    // --- obstacles ---
+    this.obstacles = this.physics.add.staticGroup();
+    for(let i=0;i<40;i++){
+      const ox=rnd(200,WORLD_W-200), oy=rnd(200,WORLD_H-200);
+      const w=rnd(40,120), h=rnd(40,120);
+      const obs = this.add.rectangle(ox,oy,w,h,0x533483);
+      this.physics.add.existing(obs, true);
+      this.obstacles.add(obs);
+    }
+
+    // --- player ---
+    this.player = this.createPlayer(WORLD_W/2, WORLD_H/2);
+    this.cameras.main.startFollow(this.player.sprite, true, 0.08, 0.08);
+    this.cameras.main.setZoom(1);
+
+    // --- monsters ---
+    this.monsters = [];
+    this.spawnAllMonsters();
+
+    // --- items on ground ---
+    this.groundItems = [];
+
+    // --- projectiles ---
+    this.projectiles = [];
+
+    // --- input ---
+    this.keys = this.input.keyboard.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,Q,E,I,SPACE');
+    this.wKey = this.input.keyboard.addKey('W');
+    this.input.keyboard.on('keydown-I', ()=> this.toggleInventory());
+    this.input.keyboard.on('keydown-SPACE', ()=> { this.player.autoHunt = !this.player.autoHunt; });
+
+    // --- collisions ---
+    this.physics.add.collider(this.player.sprite, this.obstacles);
+
+    // --- HUD scene ---
+    this.scene.launch('HUD');
+    this.hudScene = this.scene.get('HUD');
+
+    // --- attack on click (non-touch only or fallback) ---
+    this.input.on('pointerdown', (ptr)=>{
+      if(this.inventoryOpen) return;
+      // On touch devices, ignore canvas taps — use buttons instead
+      if(IS_TOUCH) return;
+      this.playerAttack(ptr);
+    });
+
+    // --- skill cooldowns ---
+    this.player.skills = {
+      Q: { cd: 2000, last: 0, name: 'Fireball' },
+      W: { cd: 5000, last: 0, name: 'Ice Nova' },
+      E: { cd: 3000, last: 0, name: 'Dash' },
+    };
+    this.player.attackCd = 400;
+    this.player.lastAttack = 0;
+    this.player.autoHunt = false;
+    this.player.invincible = false;
+
+    this.inventoryOpen = false;
+
+    // particle-like arrays
+    this.damageTexts = [];
+    this.effects = [];
+
+    // --- Touch: virtual joystick state ---
+    this.touchMove = { active: false, id: null, sx: 0, sy: 0, dx: 0, dy: 0 };
+  }
+
+  // Called by HUD touch buttons
+  touchAttack(){
+    if(this.inventoryOpen) return;
+    const now = this.time.now;
+    if(now - this.player.lastAttack < this.player.attackCd) return;
+    this.player.lastAttack = now;
+
+    const a = Math.atan2(this.player.facing.y, this.player.facing.x);
+    const sx = this.player.sprite.x + Math.cos(a)*35;
+    const sy = this.player.sprite.y + Math.sin(a)*35;
+    const slash = this.add.arc(sx, sy, 18, 0, 360, false, 0xffffff, 0.7).setDepth(15);
+    this.tweens.add({ targets: slash, alpha:0, scaleX:2, scaleY:2, duration:200, onComplete:()=>slash.destroy() });
+
+    const atkBonus = this.player.equipment.weapon ? this.player.equipment.weapon.bonus : 0;
+    const dmg = this.player.atk + atkBonus + rnd(-2,2);
+    this.monsters.forEach(m=>{
+      if(!m.alive) return;
+      if(dist({x:sx,y:sy}, m.sprite) < 50){
+        this.damageMonster(m, dmg);
+      }
+    });
+  }
+
+  createPlayer(x,y){
+    const sprite = this.add.rectangle(x,y,28,32,0x00d2ff);
+    sprite.setDepth(10);
+    this.physics.add.existing(sprite);
+    sprite.body.setCollideWorldBounds(true);
+    const glow = this.add.circle(x,y,22,0x00d2ff,0.15).setDepth(9);
+
+    return {
+      sprite, glow,
+      hp: 100, maxHp: 100,
+      atk: 10, def: 5,
+      exp: 0, level: 1,
+      speed: 220,
+      facing: {x:1,y:0},
+      inventory: [],
+      equipment: { weapon: null, armor: null },
+      gold: 0,
+      skills: null, attackCd: 0, lastAttack: 0,
+      autoHunt: false, invincible: false,
+    };
+  }
+
+  spawnAllMonsters(){
+    for(let i=0;i<MONSTER_COUNT.melee;i++) this.spawnMonster('melee');
+    for(let i=0;i<MONSTER_COUNT.ranged;i++) this.spawnMonster('ranged');
+    for(let i=0;i<MONSTER_COUNT.boss;i++) this.spawnMonster('boss');
+  }
+
+  spawnMonster(type){
+    const cfg = {
+      melee:  { hp:30, atk:5, exp:10, color:0xe74c3c, size:24, speed:100, range:500, atkRange:40, atkCd:1000 },
+      ranged: { hp:20, atk:8, exp:15, color:0x9b59b6, size:20, speed:80, range:600, atkRange:250, atkCd:1500 },
+      boss:   { hp:200,atk:15,exp:100,color:0xe67e22, size:44, speed:70, range:700, atkRange:50, atkCd:800 },
+    }[type];
+    let x,y;
+    do { x=rnd(100,WORLD_W-100); y=rnd(100,WORLD_H-100); }
+    while(dist({x,y}, this.player.sprite) < 300);
+
+    const sprite = this.add.rectangle(x,y,cfg.size,cfg.size,cfg.color);
+    sprite.setDepth(8);
+    this.physics.add.existing(sprite);
+    sprite.body.setCollideWorldBounds(true);
+    this.physics.add.collider(sprite, this.obstacles);
+
+    const hpBg = this.add.rectangle(x, y - cfg.size/2 - 10, cfg.size+10, 5, 0x333333).setDepth(11);
+    const hpBar = this.add.rectangle(x, y - cfg.size/2 - 10, cfg.size+10, 5, 0xff0000).setDepth(12);
+
+    const m = { sprite, type, ...cfg, maxHp: cfg.hp, hpBg, hpBar, lastAtk:0, frozen:0, alive:true, projectileCd:0 };
+    this.monsters.push(m);
+    return m;
+  }
+
+  playerAttack(ptr){
+    const now = this.time.now;
+    if(now - this.player.lastAttack < this.player.attackCd) return;
+    this.player.lastAttack = now;
+
+    const wx = ptr.worldX, wy = ptr.worldY;
+    const a = Math.atan2(wy - this.player.sprite.y, wx - this.player.sprite.x);
+    this.player.facing = { x: Math.cos(a), y: Math.sin(a) };
+
+    const sx = this.player.sprite.x + Math.cos(a)*35;
+    const sy = this.player.sprite.y + Math.sin(a)*35;
+    const slash = this.add.arc(sx, sy, 18, 0, 360, false, 0xffffff, 0.7).setDepth(15);
+    this.tweens.add({ targets: slash, alpha:0, scaleX:2, scaleY:2, duration:200, onComplete:()=>slash.destroy() });
+
+    const atkBonus = this.player.equipment.weapon ? this.player.equipment.weapon.bonus : 0;
+    const dmg = this.player.atk + atkBonus + rnd(-2,2);
+    this.monsters.forEach(m=>{
+      if(!m.alive) return;
+      if(dist({x:sx,y:sy}, m.sprite) < 50){
+        this.damageMonster(m, dmg);
+      }
+    });
+  }
+
+  useSkillQ(){
+    const sk = this.player.skills.Q;
+    const now = this.time.now;
+    if(now - sk.last < sk.cd) return;
+    sk.last = now;
+
+    const a = Math.atan2(this.player.facing.y, this.player.facing.x);
+    const sx = this.player.sprite.x, sy = this.player.sprite.y;
+    const fb = this.add.circle(sx, sy, 10, 0xff6600, 1).setDepth(15);
+    this.physics.add.existing(fb);
+    const speed = 500;
+    fb.body.setVelocity(Math.cos(a)*speed, Math.sin(a)*speed);
+    const glow = this.add.circle(sx, sy, 16, 0xff6600, 0.3).setDepth(14);
+
+    const proj = { sprite: fb, glow, damage: this.player.atk * 2 + 5, life: 1500, born: now, type:'fireball' };
+    this.projectiles.push(proj);
+  }
+
+  useSkillW(){
+    const sk = this.player.skills.W;
+    const now = this.time.now;
+    if(now - sk.last < sk.cd) return;
+    sk.last = now;
+
+    const px = this.player.sprite.x, py = this.player.sprite.y;
+    const ring = this.add.circle(px,py,10,0x00bfff,0.5).setDepth(15);
+    this.tweens.add({ targets:ring, scaleX:15, scaleY:15, alpha:0, duration:500, onComplete:()=>ring.destroy() });
+
+    const dmg = this.player.atk + 3;
+    this.monsters.forEach(m=>{
+      if(!m.alive) return;
+      if(dist(this.player.sprite, m.sprite) < 180){
+        this.damageMonster(m, dmg);
+        m.frozen = now + 2000;
+        m.sprite.fillColor = 0x87ceeb;
+      }
+    });
+  }
+
+  useSkillE(){
+    const sk = this.player.skills.E;
+    const now = this.time.now;
+    if(now - sk.last < sk.cd) return;
+    sk.last = now;
+
+    this.player.invincible = true;
+    const dashDist = 200;
+    const tx = this.player.sprite.x + this.player.facing.x * dashDist;
+    const ty = this.player.sprite.y + this.player.facing.y * dashDist;
+    for(let i=0;i<5;i++){
+      const t = this.add.rectangle(
+        this.player.sprite.x + this.player.facing.x*i*40,
+        this.player.sprite.y + this.player.facing.y*i*40,
+        28,32,0x00d2ff,0.3).setDepth(9);
+      this.tweens.add({targets:t, alpha:0, duration:300, delay:i*50, onComplete:()=>t.destroy()});
+    }
+
+    this.tweens.add({
+      targets: this.player.sprite,
+      x: Phaser.Math.Clamp(tx,30,WORLD_W-30),
+      y: Phaser.Math.Clamp(ty,30,WORLD_H-30),
+      duration: 150,
+      onComplete: ()=>{ this.player.invincible = false; }
+    });
+  }
+
+  damageMonster(m, dmg){
+    const actual = Math.max(1, dmg);
+    m.hp -= actual;
+    this.showDamageNumber(m.sprite.x, m.sprite.y - 20, actual, 0xffff00);
+
+    if(m.hp <= 0){
+      m.alive = false;
+      m.sprite.destroy();
+      m.hpBg.destroy();
+      m.hpBar.destroy();
+      this.player.exp += m.exp;
+      this.checkLevelUp();
+      this.dropItems(m);
+      this.time.delayedCall(rnd(5000,10000), ()=>{
+        const idx = this.monsters.indexOf(m);
+        if(idx >= 0) this.monsters.splice(idx,1);
+        this.spawnMonster(m.type);
+      });
+    }
+  }
+
+  damagePlayer(dmg){
+    if(this.player.invincible) return;
+    const defBonus = this.player.equipment.armor ? this.player.equipment.armor.bonus : 0;
+    const actual = Math.max(1, dmg - this.player.def - defBonus);
+    this.player.hp -= actual;
+    this.showDamageNumber(this.player.sprite.x, this.player.sprite.y - 25, actual, 0xff4444);
+    this.player.sprite.fillColor = 0xff0000;
+    this.time.delayedCall(100, ()=>{ this.player.sprite.fillColor = 0x00d2ff; });
+
+    if(this.player.hp <= 0){
+      this.player.hp = this.player.maxHp;
+      this.player.sprite.setPosition(WORLD_W/2, WORLD_H/2);
+      this.showDamageNumber(WORLD_W/2, WORLD_H/2 - 40, 'RESPAWN', 0x00ff00);
+    }
+  }
+
+  checkLevelUp(){
+    const needed = this.player.level * 100;
+    while(this.player.exp >= needed){
+      this.player.exp -= needed;
+      this.player.level++;
+      this.player.maxHp += 20;
+      this.player.hp = this.player.maxHp;
+      this.player.atk += 3;
+      this.player.def += 2;
+      this.showDamageNumber(this.player.sprite.x, this.player.sprite.y - 50, 'LEVEL UP!', 0xffd700);
+      const ring = this.add.circle(this.player.sprite.x, this.player.sprite.y, 10, 0xffd700, 0.6).setDepth(20);
+      this.tweens.add({targets:ring, scaleX:8, scaleY:8, alpha:0, duration:600, onComplete:()=>ring.destroy()});
+    }
+  }
+
+  dropItems(m){
+    const drops = [];
+    const r = Math.random();
+    drops.push({type:'gold', color:0xffd700, value:rnd(5,15)});
+    if(r < 0.3) drops.push({type:'potion', color:0x2ecc71, value:30});
+    if(m.type==='boss'){
+      if(Math.random()<0.5) drops.push({type:'weapon', color:0xf1c40f, bonus:rnd(3,8), value:0});
+      if(Math.random()<0.5) drops.push({type:'armor', color:0x3498db, bonus:rnd(2,6), value:0});
+    } else {
+      if(r < 0.08) drops.push({type:'weapon', color:0xf1c40f, bonus:rnd(1,4), value:0});
+      if(r < 0.06) drops.push({type:'armor', color:0x3498db, bonus:rnd(1,3), value:0});
+    }
+
+    drops.forEach((d,i)=>{
+      const ix = m.sprite ? m.sprite.x : m.x;
+      const iy = m.sprite ? m.sprite.y : m.y;
+      const item = this.add.circle(ix + rnd(-20,20), iy + rnd(-20,20), 7, d.color, 1).setDepth(7);
+      this.tweens.add({targets:item, y:item.y-4, yoyo:true, repeat:-1, duration:600, ease:'Sine.easeInOut'});
+      this.groundItems.push({sprite:item, ...d});
+    });
+  }
+
+  pickupItems(){
+    for(let i=this.groundItems.length-1;i>=0;i--){
+      const it = this.groundItems[i];
+      if(dist(this.player.sprite, it.sprite) < 30){
+        if(it.type==='gold'){
+          this.player.gold += it.value;
+        } else if(it.type==='potion'){
+          this.player.hp = Math.min(this.player.maxHp, this.player.hp + it.value);
+          this.showDamageNumber(this.player.sprite.x, this.player.sprite.y-30, '+'+it.value+' HP', 0x2ecc71);
+        } else {
+          this.player.inventory.push({type:it.type, color:it.color, bonus:it.bonus});
+        }
+        it.sprite.destroy();
+        this.groundItems.splice(i,1);
+      }
+    }
+  }
+
+  showDamageNumber(x,y,text,color){
+    const t = this.add.text(x,y,''+text,{fontSize:'16px',fontFamily:'monospace',color:'#'+color.toString(16).padStart(6,'0'),stroke:'#000',strokeThickness:3}).setOrigin(0.5).setDepth(50);
+    this.tweens.add({targets:t, y:y-40, alpha:0, duration:800, onComplete:()=>t.destroy()});
+  }
+
+  toggleInventory(){
+    this.inventoryOpen = !this.inventoryOpen;
+    if(this.hudScene) this.hudScene.showInventory = this.inventoryOpen;
+  }
+
+  doAutoHunt(){
+    if(!this.player.autoHunt) return;
+    let nearest = null, nd = Infinity;
+    this.monsters.forEach(m=>{
+      if(!m.alive) return;
+      const d = dist(this.player.sprite, m.sprite);
+      if(d < nd){ nd = d; nearest = m; }
+    });
+    if(!nearest) return;
+
+    const a = angle(this.player.sprite, nearest.sprite);
+    this.player.facing = {x:Math.cos(a), y:Math.sin(a)};
+
+    if(nd > 45){
+      this.player.sprite.body.setVelocity(Math.cos(a)*this.player.speed, Math.sin(a)*this.player.speed);
+    } else {
+      this.player.sprite.body.setVelocity(0,0);
+    }
+
+    const now = this.time.now;
+    if(nd < 60 && now - this.player.lastAttack >= this.player.attackCd){
+      this.player.lastAttack = now;
+      const sx = this.player.sprite.x + Math.cos(a)*35;
+      const sy = this.player.sprite.y + Math.sin(a)*35;
+      const slash = this.add.arc(sx,sy,18,0,360,false,0xffffff,0.7).setDepth(15);
+      this.tweens.add({targets:slash,alpha:0,scaleX:2,scaleY:2,duration:200,onComplete:()=>slash.destroy()});
+      const atkBonus = this.player.equipment.weapon ? this.player.equipment.weapon.bonus : 0;
+      this.monsters.forEach(m2=>{
+        if(!m2.alive) return;
+        if(dist({x:sx,y:sy}, m2.sprite) < 50) this.damageMonster(m2, this.player.atk + atkBonus + rnd(-2,2));
+      });
+    }
+
+    if(nd < 300 && now - this.player.skills.Q.last >= this.player.skills.Q.cd) this.useSkillQ();
+    if(nd < 200 && now - this.player.skills.W.last >= this.player.skills.W.cd) this.useSkillW();
+    if(nd > 150 && nd < 400 && now - this.player.skills.E.last >= this.player.skills.E.cd) this.useSkillE();
+  }
+
+  update(time, delta){
+    const p = this.player;
+    const sp = p.sprite;
+
+    if(!p.autoHunt){
+      let vx=0, vy=0;
+      
+      // Keyboard input
+      if(this.keys.A.isDown||this.keys.LEFT.isDown) vx=-1;
+      if(this.keys.D.isDown||this.keys.RIGHT.isDown) vx=1;
+      if(this.wKey.isDown||this.keys.UP.isDown) vy=-1;
+      if(this.keys.S.isDown||this.keys.DOWN.isDown) vy=1;
+
+      // Touch joystick input
+      if(this.touchMove.active){
+        vx = this.touchMove.dx;
+        vy = this.touchMove.dy;
+      }
+
+      if(vx||vy){
+        const len = Math.sqrt(vx*vx+vy*vy);
+        vx/=len; vy/=len;
+        p.facing = {x:vx, y:vy};
+      }
+      sp.body.setVelocity(vx*p.speed, vy*p.speed);
+    } else {
+      this.doAutoHunt();
+    }
+
+    p.glow.setPosition(sp.x, sp.y);
+
+    // --- skills (keyboard) ---
+    if(this.keys.Q.isDown) this.useSkillQ();
+    if(this.input.keyboard.checkDown(this.input.keyboard.addKey('W'), 500) === false && this.keys.E.isDown) this.useSkillE();
+    if(!this._skillKeysSetup){
+      this._skillKeysSetup = true;
+      this.input.keyboard.on('keydown-Q', ()=> this.useSkillQ());
+      this.input.keyboard.on('keydown-E', ()=> this.useSkillE());
+      this.input.keyboard.on('keydown-W', ()=> this.useSkillW());
+    }
+
+    // --- projectiles ---
+    for(let i=this.projectiles.length-1;i>=0;i--){
+      const proj = this.projectiles[i];
+      if(time - proj.born > proj.life){
+        proj.sprite.destroy();
+        if(proj.glow) proj.glow.destroy();
+        this.projectiles.splice(i,1);
+        continue;
+      }
+      if(proj.glow){
+        proj.glow.setPosition(proj.sprite.x, proj.sprite.y);
+      }
+      this.monsters.forEach(m=>{
+        if(!m.alive) return;
+        if(dist(proj.sprite, m.sprite) < 30){
+          this.damageMonster(m, proj.damage);
+          const exp = this.add.circle(proj.sprite.x, proj.sprite.y, 8, 0xff4400, 0.8).setDepth(15);
+          this.tweens.add({targets:exp, scaleX:4, scaleY:4, alpha:0, duration:300, onComplete:()=>exp.destroy()});
+          proj.sprite.destroy();
+          if(proj.glow) proj.glow.destroy();
+          proj.life = 0; proj.born = time;
+        }
+      });
+    }
+
+    // --- monster AI ---
+    this.monsters.forEach(m=>{
+      if(!m.alive) return;
+      const d = dist(sp, m.sprite);
+      const now = time;
+
+      if(m.frozen && now > m.frozen){
+        m.frozen = 0;
+        const cfg = {melee:0xe74c3c, ranged:0x9b59b6, boss:0xe67e22};
+        m.sprite.fillColor = cfg[m.type];
+      }
+
+      if(m.frozen && now < m.frozen){
+        m.sprite.body.setVelocity(0,0);
+      } else if(d < m.range){
+        if(d > m.atkRange){
+          const a2 = angle(m.sprite, sp);
+          m.sprite.body.setVelocity(Math.cos(a2)*m.speed, Math.sin(a2)*m.speed);
+        } else {
+          m.sprite.body.setVelocity(0,0);
+          if(now - m.lastAtk > m.atkCd){
+            m.lastAtk = now;
+            if(m.type==='ranged'){
+              const a2 = angle(m.sprite, sp);
+              const bullet = this.add.circle(m.sprite.x, m.sprite.y, 5, 0xcc66ff, 1).setDepth(12);
+              this.physics.add.existing(bullet);
+              bullet.body.setVelocity(Math.cos(a2)*300, Math.sin(a2)*300);
+              const ep = {sprite:bullet, born:now, life:2000, damage:m.atk, enemy:true};
+              this.projectiles.push(ep);
+            } else {
+              this.damagePlayer(m.atk);
+            }
+          }
+        }
+      } else {
+        m.sprite.body.setVelocity(0,0);
+      }
+
+      m.hpBg.setPosition(m.sprite.x, m.sprite.y - m.size/2 - 10);
+      m.hpBar.setPosition(m.sprite.x, m.sprite.y - m.size/2 - 10);
+      const ratio = Math.max(0, m.hp/m.maxHp);
+      m.hpBar.width = (m.size+10) * ratio;
+    });
+
+    // enemy projectiles hitting player
+    for(let i=this.projectiles.length-1;i>=0;i--){
+      const proj = this.projectiles[i];
+      if(proj.enemy && proj.sprite && proj.sprite.active){
+        if(dist(proj.sprite, sp) < 20){
+          this.damagePlayer(proj.damage);
+          proj.sprite.destroy();
+          this.projectiles.splice(i,1);
+        }
+      }
+    }
+
+    this.pickupItems();
+
+    if(this.hudScene){
+      this.hudScene.playerData = {
+        hp: p.hp, maxHp: p.maxHp, exp: p.exp, level: p.level,
+        atk: p.atk, def: p.def, gold: p.gold,
+        skills: p.skills, now: time,
+        autoHunt: p.autoHunt,
+        inventory: p.inventory,
+        equipment: p.equipment,
+        px: sp.x, py: sp.y,
+        monsters: this.monsters.filter(m=>m.alive).map(m=>({x:m.sprite.x,y:m.sprite.y,type:m.type})),
+      };
+    }
+  }
+}
+
+// ---------- HUD SCENE ----------
+class HUDScene extends Phaser.Scene {
+  constructor(){ super('HUD'); }
+
+  create(){
+    this.playerData = {};
+    this.showInventory = false;
+
+    const sw = this.cameras.main.width;
+    const sh = this.cameras.main.height;
+    const isMobile = IS_TOUCH;
+    const scale = isMobile ? Math.min(sw/800, 1.2) : 1;
+
+    // HP bar
+    const hpW = isMobile ? Math.min(180, sw*0.3) : 220;
+    const hpX = isMobile ? 80 : 140;
+    this.hpBg = this.add.rectangle(hpX, 25, hpW, 18, 0x333333).setOrigin(0,0.5).setScrollFactor(0);
+    this.hpFill = this.add.rectangle(hpX, 25, hpW, 18, 0xe74c3c).setOrigin(0,0.5).setScrollFactor(0);
+    this.hpText = this.add.text(hpX+5, 25, '', {fontSize: isMobile?'11px':'12px',fontFamily:'monospace',color:'#fff'}).setOrigin(0,0.5).setScrollFactor(0).setDepth(1);
+    this.levelText = this.add.text(10, 18, 'Lv 1', {fontSize: isMobile?'16px':'20px',fontFamily:'monospace',color:'#ffd700',stroke:'#000',strokeThickness:3}).setScrollFactor(0);
+    this._hpW = hpW;
+
+    // EXP bar
+    this.expBg = this.add.rectangle(hpX, 48, hpW, 10, 0x333333).setOrigin(0,0.5).setScrollFactor(0);
+    this.expFill = this.add.rectangle(hpX, 48, hpW, 10, 0x2ecc71).setOrigin(0,0.5).setScrollFactor(0);
+    this.expText = this.add.text(hpX+5, 48, '', {fontSize:'9px',fontFamily:'monospace',color:'#fff'}).setOrigin(0,0.5).setScrollFactor(0).setDepth(1);
+
+    // Stats
+    this.statsText = this.add.text(10, 60, '', {fontSize:'11px',fontFamily:'monospace',color:'#aaa'}).setScrollFactor(0);
+    this.goldText = this.add.text(10, 78, '', {fontSize:'12px',fontFamily:'monospace',color:'#ffd700'}).setScrollFactor(0);
+
+    // Skill bar (desktop: bottom center)
+    this.skillSlots = [];
+    const skillKeys = ['Q','W','E'];
+    const skillNames = ['Fireball','Ice Nova','Dash'];
+    const skillColors = [0xff6600, 0x00bfff, 0x00d2ff];
+
+    if(!isMobile){
+      // Desktop skill bar at bottom center
+      skillKeys.forEach((k,i)=>{
+        const x = sw/2 - 80 + i*80;
+        const y = sh - 45;
+        const bg = this.add.rectangle(x,y,60,50,0x222222,0.8).setScrollFactor(0).setStrokeStyle(2,skillColors[i]);
+        const label = this.add.text(x,y-12,k,{fontSize:'16px',fontFamily:'monospace',color:'#fff',stroke:'#000',strokeThickness:2}).setOrigin(0.5).setScrollFactor(0);
+        const name = this.add.text(x,y+5,skillNames[i],{fontSize:'8px',fontFamily:'monospace',color:'#aaa'}).setOrigin(0.5).setScrollFactor(0);
+        const cdText = this.add.text(x,y+18,'',{fontSize:'10px',fontFamily:'monospace',color:'#ff4444'}).setOrigin(0.5).setScrollFactor(0);
+        const overlay = this.add.rectangle(x,y,60,50,0x000000,0.6).setScrollFactor(0);
+        this.skillSlots.push({bg,label,name,cdText,overlay,key:k});
+      });
+    }
+
+    // Auto indicator
+    this.autoText = this.add.text(sw/2, isMobile ? 20 : sh - 80, '⚔ AUTO ⚔', {fontSize: isMobile?'14px':'18px',fontFamily:'monospace',color:'#ffd700',stroke:'#000',strokeThickness:3}).setOrigin(0.5).setScrollFactor(0).setVisible(false);
+
+    // Mini-map
+    const mmSize = isMobile ? 80 : 120;
+    this.miniMapBg = this.add.rectangle(sw - mmSize/2 - 10, mmSize/2 + 10, mmSize, mmSize, 0x111111, 0.7).setScrollFactor(0).setStrokeStyle(1,0x444444);
+    this.miniMapGfx = this.add.graphics().setScrollFactor(0);
+    this._mmSize = mmSize;
+
+    // Inventory panel
+    const invCellSize = isMobile ? 55 : 40;
+    const invCols = isMobile ? 5 : 6;
+    const invRows = 4;
+    const invW = invCols * (invCellSize+5) + 40;
+    const invH = invRows * (invCellSize+5) + 120;
+    this.invPanel = this.add.container(sw/2, sh/2).setScrollFactor(0).setVisible(false).setDepth(100);
+    const invBg = this.add.rectangle(0,0,invW,invH,0x1a1a2e,0.95).setStrokeStyle(2,0x555555);
+    const invTitle = this.add.text(0,-invH/2+20,'INVENTORY',{fontSize:'16px',fontFamily:'monospace',color:'#ffd700'}).setOrigin(0.5);
+    
+    // Close button for touch
+    const closeBtn = this.add.text(invW/2 - 15, -invH/2+10, '✕', {fontSize:'22px',color:'#ff4444'}).setOrigin(0.5).setScrollFactor(0).setDepth(101);
+    closeBtn.setInteractive();
+    closeBtn.on('pointerdown', ()=>{
+      const gameScene = this.scene.get('Game');
+      gameScene.toggleInventory();
+    });
+    
+    this.invPanel.add([invBg, invTitle, closeBtn]);
+    this.invSlots = [];
+
+    const wepLabel = this.add.text(-invW/2+20,-invH/2+45,'Weapon:',{fontSize:'11px',fontFamily:'monospace',color:'#f1c40f'});
+    const armLabel = this.add.text(-invW/2+20,-invH/2+65,'Armor:',{fontSize:'11px',fontFamily:'monospace',color:'#3498db'});
+    this.invWeaponText = this.add.text(-invW/2+90,-invH/2+45,'None',{fontSize:'11px',fontFamily:'monospace',color:'#888'});
+    this.invArmorText = this.add.text(-invW/2+90,-invH/2+65,'None',{fontSize:'11px',fontFamily:'monospace',color:'#888'});
+    this.invPanel.add([wepLabel, armLabel, this.invWeaponText, this.invArmorText]);
+
+    for(let r=0;r<invRows;r++){
+      for(let c=0;c<invCols;c++){
+        const sx = -invW/2 + 30 + c*(invCellSize+5);
+        const sy = -invH/2 + 95 + r*(invCellSize+5);
+        const slot = this.add.rectangle(sx+invCellSize/2,sy+invCellSize/2,invCellSize,invCellSize,0x2a2a4a).setStrokeStyle(1,0x444466);
+        const icon = this.add.circle(sx+invCellSize/2,sy+invCellSize/2,invCellSize*0.25,0x000000,0).setDepth(101);
+        // Make slots interactive for touch
+        slot.setInteractive();
+        const slotIdx = r*invCols+c;
+        slot.on('pointerdown', ()=> this.onInvSlotTap(slotIdx));
+        this.invPanel.add([slot, icon]);
+        this.invSlots.push({slot, icon});
+      }
+    }
+    this._invCols = invCols;
+
+    // Desktop controls help
+    if(!isMobile){
+      this.add.text(20, sh-20, 'WASD:Move  Click:Attack  Q/W/E:Skills  I:Inventory  SPACE:Auto', {fontSize:'10px',fontFamily:'monospace',color:'#555'}).setOrigin(0,1).setScrollFactor(0);
+    }
+
+    // ========== MOBILE TOUCH CONTROLS ==========
+    if(isMobile) this.createTouchControls(sw, sh);
+  }
+
+  onInvSlotTap(idx){
+    const gameScene = this.scene.get('Game');
+    const inv = gameScene.player.inventory;
+    if(idx >= inv.length) return;
+    const it = inv[idx];
+    if(it.type === 'weapon'){
+      gameScene.player.equipment.weapon = it;
+    } else if(it.type === 'armor'){
+      gameScene.player.equipment.armor = it;
+    }
+  }
+
+  createTouchControls(sw, sh){
+    const gameScene = this.scene.get('Game');
+    
+    // ---- VIRTUAL JOYSTICK (left side) ----
+    const joyX = 100, joyY = sh - 120;
+    const joyRadius = 55;
+    const joyBg = this.add.circle(joyX, joyY, joyRadius, 0xffffff, 0.12).setScrollFactor(0).setDepth(200);
+    joyBg.setStrokeStyle(2, 0xffffff, 0.3);
+    const joyKnob = this.add.circle(joyX, joyY, 25, 0xffffff, 0.35).setScrollFactor(0).setDepth(201);
+    
+    // Joystick zone — invisible larger area for easier grab
+    const joyZone = this.add.rectangle(joyX, joyY, joyRadius*3, joyRadius*3, 0x000000, 0.001).setScrollFactor(0).setDepth(199).setInteractive();
+    
+    let joyTouchId = null;
+    
+    joyZone.on('pointerdown', (ptr) => {
+      joyTouchId = ptr.id;
+      gameScene.touchMove.active = true;
+      gameScene.touchMove.id = ptr.id;
+      gameScene.touchMove.sx = joyX;
+      gameScene.touchMove.sy = joyY;
+    });
+
+    this.input.on('pointermove', (ptr) => {
+      if(ptr.id !== joyTouchId) return;
+      const dx = ptr.x - joyX;
+      const dy = ptr.y - joyY;
+      const d = Math.sqrt(dx*dx+dy*dy);
+      const maxD = joyRadius;
+      const clampD = Math.min(d, maxD);
+      const nx = d > 0 ? dx/d : 0;
+      const ny = d > 0 ? dy/d : 0;
+      joyKnob.setPosition(joyX + nx*clampD, joyY + ny*clampD);
+      gameScene.touchMove.dx = nx * Math.min(d/maxD, 1);
+      gameScene.touchMove.dy = ny * Math.min(d/maxD, 1);
+    });
+
+    const releaseJoy = (ptr) => {
+      if(ptr.id !== joyTouchId) return;
+      joyTouchId = null;
+      joyKnob.setPosition(joyX, joyY);
+      gameScene.touchMove.active = false;
+      gameScene.touchMove.dx = 0;
+      gameScene.touchMove.dy = 0;
+    };
+    this.input.on('pointerup', releaseJoy);
+    this.input.on('pointerupoutside', releaseJoy);
+
+    // ---- ATTACK BUTTON (right side, large) ----
+    const atkSize = 60;
+    const atkX = sw - 80, atkY = sh - 90;
+    const atkBg = this.add.circle(atkX, atkY, atkSize, 0xff4444, 0.25).setScrollFactor(0).setDepth(200).setStrokeStyle(3, 0xff4444, 0.6);
+    const atkLabel = this.add.text(atkX, atkY, '⚔', {fontSize:'32px'}).setOrigin(0.5).setScrollFactor(0).setDepth(201);
+    atkBg.setInteractive();
+    atkBg.on('pointerdown', ()=>{
+      gameScene.touchAttack();
+      atkBg.fillAlpha = 0.5;
+      this.time.delayedCall(100, ()=> atkBg.fillAlpha = 0.25);
+    });
+
+    // ---- SKILL BUTTONS (right side, stacked above attack) ----
+    const skillKeys = ['Q','W','E'];
+    const skillNames = ['🔥','❄','💨'];
+    const skillColors = [0xff6600, 0x00bfff, 0x00d2ff];
+    const skillFns = [()=>gameScene.useSkillQ(), ()=>gameScene.useSkillW(), ()=>gameScene.useSkillE()];
+    
+    this.touchSkillBtns = [];
+    skillKeys.forEach((k, i)=>{
+      const bx = sw - 80 + (i === 1 ? -65 : i === 2 ? 0 : 65);
+      const by = atkY - 90 - (i === 0 ? 0 : i === 1 ? -25 : 50);
+      // Arrange in an arc: Q top-right, W left of attack, E above attack
+      const positions = [
+        {x: sw - 145, y: sh - 180},  // Q - fireball
+        {x: sw - 80,  y: sh - 195},  // W - ice nova  
+        {x: sw - 15,  y: sh - 180},  // E - dash
+      ];
+      const pos = positions[i];
+      
+      const bg = this.add.circle(pos.x, pos.y, 28, skillColors[i], 0.2).setScrollFactor(0).setDepth(200).setStrokeStyle(2, skillColors[i], 0.6);
+      const label = this.add.text(pos.x, pos.y-5, skillNames[i], {fontSize:'18px'}).setOrigin(0.5).setScrollFactor(0).setDepth(201);
+      const keyLabel = this.add.text(pos.x, pos.y+14, k, {fontSize:'10px',fontFamily:'monospace',color:'#fff',stroke:'#000',strokeThickness:2}).setOrigin(0.5).setScrollFactor(0).setDepth(201);
+      const cdOverlay = this.add.circle(pos.x, pos.y, 28, 0x000000, 0).setScrollFactor(0).setDepth(202);
+      const cdText = this.add.text(pos.x, pos.y, '', {fontSize:'12px',fontFamily:'monospace',color:'#fff',stroke:'#000',strokeThickness:2}).setOrigin(0.5).setScrollFactor(0).setDepth(203);
+      
+      bg.setInteractive();
+      bg.on('pointerdown', ()=>{
+        skillFns[i]();
+        bg.fillAlpha = 0.5;
+        this.time.delayedCall(100, ()=> bg.fillAlpha = 0.2);
+      });
+
+      this.touchSkillBtns.push({bg, cdOverlay, cdText, key: k});
+      this.skillSlots.push({overlay: cdOverlay, cdText, key: k, bg, isMobile: true});
+    });
+
+    // ---- AUTO-HUNT TOGGLE ----
+    const autoX = sw/2, autoY = sh - 30;
+    this.autoBtn = this.add.rectangle(autoX, autoY, 90, 32, 0x444444, 0.6).setScrollFactor(0).setDepth(200).setStrokeStyle(2, 0xffd700, 0.5);
+    this.autoBtnText = this.add.text(autoX, autoY, 'AUTO OFF', {fontSize:'12px',fontFamily:'monospace',color:'#888',stroke:'#000',strokeThickness:2}).setOrigin(0.5).setScrollFactor(0).setDepth(201);
+    this.autoBtn.setInteractive();
+    this.autoBtn.on('pointerdown', ()=>{
+      gameScene.player.autoHunt = !gameScene.player.autoHunt;
+    });
+
+    // ---- INVENTORY BUTTON (top right corner) ----
+    const invBtnX = sw - 35, invBtnY = 100 + this._mmSize;
+    this.invBtn = this.add.circle(invBtnX, invBtnY, 22, 0x3498db, 0.3).setScrollFactor(0).setDepth(200).setStrokeStyle(2, 0x3498db, 0.6);
+    const invBtnLabel = this.add.text(invBtnX, invBtnY, '🎒', {fontSize:'20px'}).setOrigin(0.5).setScrollFactor(0).setDepth(201);
+    this.invBtn.setInteractive();
+    this.invBtn.on('pointerdown', ()=>{
+      gameScene.toggleInventory();
+    });
+
+    // Enable multi-touch
+    this.input.addPointer(2); // 3 total pointers
+  }
+
+  update(){
+    const d = this.playerData;
+    if(!d || !d.hp) return;
+
+    const hpW = this._hpW || 220;
+
+    // HP
+    const hpRatio = d.hp / d.maxHp;
+    this.hpFill.width = hpW * hpRatio;
+    this.hpText.setText(d.hp + ' / ' + d.maxHp);
+    this.levelText.setText('Lv ' + d.level);
+
+    // EXP
+    const needed = d.level * 100;
+    this.expFill.width = hpW * (d.exp / needed);
+    this.expText.setText('EXP ' + d.exp + '/' + needed);
+
+    // Stats
+    this.statsText.setText('ATK:' + d.atk + '  DEF:' + d.def);
+    this.goldText.setText('Gold: ' + d.gold);
+
+    // Skills cooldown
+    this.skillSlots.forEach(s=>{
+      const sk = d.skills[s.key];
+      if(!sk) return;
+      const remaining = Math.max(0, sk.cd - (d.now - sk.last));
+      if(remaining > 0){
+        s.overlay.setVisible(true);
+        if(s.isMobile){
+          s.overlay.fillAlpha = 0.5;
+        } else {
+          s.overlay.height = 50 * (remaining / sk.cd);
+        }
+        s.cdText.setText((remaining/1000).toFixed(1));
+      } else {
+        s.overlay.setVisible(false);
+        s.cdText.setText('');
+      }
+    });
+
+    // Auto
+    this.autoText.setVisible(d.autoHunt);
+    
+    // Mobile auto button state
+    if(this.autoBtn){
+      if(d.autoHunt){
+        this.autoBtn.fillColor = 0xffd700;
+        this.autoBtn.fillAlpha = 0.4;
+        this.autoBtnText.setText('AUTO ON');
+        this.autoBtnText.setColor('#ffd700');
+      } else {
+        this.autoBtn.fillColor = 0x444444;
+        this.autoBtn.fillAlpha = 0.6;
+        this.autoBtnText.setText('AUTO OFF');
+        this.autoBtnText.setColor('#888');
+      }
+    }
+
+    // Mini-map
+    const mg = this.miniMapGfx;
+    const mmSize = this._mmSize || 120;
+    const mmX = this.cameras.main.width - mmSize - 10;
+    const mmY = 10;
+    mg.clear();
+    const scale = mmSize / WORLD_W;
+    mg.fillStyle(0x00d2ff,1);
+    mg.fillCircle(mmX + d.px*scale, mmY + d.py*scale, 3);
+    if(d.monsters){
+      d.monsters.forEach(m=>{
+        const c = m.type==='melee'?0xe74c3c:m.type==='ranged'?0x9b59b6:0xe67e22;
+        mg.fillStyle(c, 0.8);
+        mg.fillCircle(mmX + m.x*scale, mmY + m.y*scale, m.type==='boss'?3:1.5);
+      });
+    }
+
+    // Inventory
+    this.invPanel.setVisible(this.showInventory);
+    if(this.showInventory){
+      this.invWeaponText.setText(d.equipment.weapon ? 'ATK +'+d.equipment.weapon.bonus : 'None');
+      this.invArmorText.setText(d.equipment.armor ? 'DEF +'+d.equipment.armor.bonus : 'None');
+      this.invSlots.forEach((s,i)=>{
+        if(i < d.inventory.length){
+          const it = d.inventory[i];
+          s.icon.fillColor = it.color;
+          s.icon.fillAlpha = 1;
+        } else {
+          s.icon.fillAlpha = 0;
+        }
+      });
+    }
+
+    // auto-equip best items
+    if(d.inventory){
+      d.inventory.forEach((it,i)=>{
+        if(it.type==='weapon'){
+          if(!d.equipment.weapon || it.bonus > d.equipment.weapon.bonus){
+            d.equipment.weapon = it;
+          }
+        }
+        if(it.type==='armor'){
+          if(!d.equipment.armor || it.bonus > d.equipment.armor.bonus){
+            d.equipment.armor = it;
+          }
+        }
+      });
+    }
+  }
+}
+
+// ---------- CONFIG ----------
+const config = {
+  type: Phaser.AUTO,
+  width: Math.min(1200, window.innerWidth),
+  height: Math.min(800, window.innerHeight),
+  parent: document.body,
+  backgroundColor: '#0a0a1a',
+  physics: {
+    default: 'arcade',
+    arcade: { debug: false }
+  },
+  scene: [GameScene, HUDScene],
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+  },
+  input: {
+    activePointers: 3,
+  }
+};
+
+const game = new Phaser.Game(config);
+</script>
+</body>
+</html>
