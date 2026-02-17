@@ -552,17 +552,28 @@ await addHuntLine(`${skill.icon} ${skill.name} → ${tag}${dmg} 데미지`,'acti
 if(totalEnemyHP>0&&r.type==='miss'){const eDmg=Math.max(1,Math.floor((5+G.floor*2)*(0.8+Math.random()*0.4)-G.def/3));playerHPLoss+=eDmg;await addHuntLine(`${enemy}의 반격! → -${eDmg} HP`,'damage',log)}
 await wait(300)}
 }else{
-// Normal & auto-boss: text-based
+// Normal & auto-boss: probability-based
 for(let r=0;r<rounds&&totalEnemyHP>0;r++){
 const skill=G.equippedSkills[r%G.equippedSkills.length];
-let dmg=Math.floor((skill.dmg||20)*(1+G.atk/30)*(0.8+Math.random()*0.4));
-if(G.equipment.weapon)dmg+=Math.floor(G.equipment.weapon.stats.ATK||0);
-const crit=Math.random()*100<(10+(G.critBonus||0));
-if(crit)dmg=Math.floor(dmg*1.5);
+let baseDmg=Math.floor((skill.dmg||20)*(1+G.atk/30));
+if(G.equipment.weapon)baseDmg+=Math.floor(G.equipment.weapon.stats.ATK||0);
+const roll=Math.random()*100;
+let dmg,tag;
+if(isBoss){
+// 보스 자동: 크리15% 적중55% 미스30%
+if(roll<15){dmg=Math.floor(baseDmg*2.5);tag='💥크리티컬!! '}
+else if(roll<70){dmg=Math.floor(baseDmg*(0.8+Math.random()*0.4));tag=''}
+else{dmg=Math.floor(baseDmg*0.3);tag='❌빗나감... '}
+}else{
+// 일반: 크리10%+보너스
+const critChance=10+(G.critBonus||0);
+if(roll<critChance){dmg=Math.floor(baseDmg*1.5);tag='💥크리티컬! '}
+else{dmg=Math.floor(baseDmg*(0.8+Math.random()*0.4));tag=''}
+}
 totalEnemyHP-=dmg;
-await addHuntLine(`${skill.icon} ${skill.name} 시전! → ${crit?'💥크리티컬! ':''}${dmg} 데미지`,'action',log);
+await addHuntLine(`${skill.icon} ${skill.name} 시전! → ${tag}${dmg} 데미지`,'action',log);
 await wait(300);
-if(totalEnemyHP>0){const eDmg=Math.max(1,Math.floor((5+G.floor*2)*(0.6+Math.random()*0.4)-G.def/3));playerHPLoss+=eDmg;await addHuntLine(`${enemy}의 반격! → -${eDmg} HP`,'damage',log);await wait(200)}}
+if(totalEnemyHP>0&&(tag.includes('빗나감')||Math.random()<0.6)){const eDmg=Math.max(1,Math.floor((5+G.floor*2)*(0.6+Math.random()*0.4)-G.def/3));playerHPLoss+=eDmg;await addHuntLine(`${enemy}의 반격! → -${eDmg} HP`,'damage',log);await wait(200)}}
 }
 
 // Result
