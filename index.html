@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="naver-site-verification" content="3351c70eb6871e40a68c2c27d9a0693725e25c55" />
 <title>Salmonholic — Developer Tools, Escape Room & Puzzle Games</title>
-<meta name="description" content="Salmonholic offers 17+ developer tools, QUBE escape room puzzles, YesNo lateral thinking games, and Skill Check timing challenges. Free, no signup, runs in your browser.">
-<meta name="keywords" content="developer tools, online tools, JSON formatter, UUID generator, escape room, puzzle game, 방탈출, 퍼즐, 바다거북수프, lateral thinking, skill check, free tools, web tools, QUBE, YesNo">
+<meta name="description" content="Salmonholic offers 17+ developer tools, QUBE escape room puzzles, YesNo lateral thinking games, Skill Check timing challenges, and SYMMETRY AI RPG. Free, no signup, runs in your browser.">
+<meta name="keywords" content="developer tools, online tools, JSON formatter, UUID generator, escape room, puzzle game, 방탈출, 퍼즐, 바다거북수프, lateral thinking, skill check, AI RPG, 키우기, free tools, web tools, QUBE, YesNo, SYMMETRY">
 <meta name="author" content="Salmonholic">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://salmonholic.com/">
@@ -358,6 +358,16 @@ section {
 }
 .game-card.skillcheck:hover { border-color: rgba(255,68,102,0.4); }
 
+/* Symmetry card */
+.game-card.symmetry {
+  background: linear-gradient(135deg, #0a0a1a 0%, #1a0d2e 60%, #0d1a2e 100%);
+  border: 1px solid rgba(41,151,255,0.2);
+}
+.game-card.symmetry::before {
+  background: radial-gradient(circle at 80% 20%, rgba(41,151,255,0.3), transparent 60%);
+}
+.game-card.symmetry:hover { border-color: rgba(41,151,255,0.4); }
+
 .game-card-icon {
   font-size: 3em;
   margin-bottom: 20px;
@@ -561,7 +571,7 @@ footer a:hover { color: var(--text); }
       <div class="label">Developer Tools</div>
     </div>
     <div class="hero-stat">
-      <div class="num games-color">3</div>
+      <div class="num games-color">4</div>
       <div class="label">Web Games</div>
     </div>
   </div>
@@ -609,19 +619,34 @@ footer a:hover { color: var(--text); }
           <span class="game-card-arrow">→</span>
         </a>
       </div>
-      <a class="game-card skillcheck" href="https://skillcheck.salmonholic.com">
-        <span class="game-card-icon">⚡</span>
-        <div class="game-card-title">Skill Check</div>
-        <div class="game-card-tagline">Test your reflexes.</div>
-        <p class="game-card-desc">Inspired by Dead by Daylight — hit the timing window as the needle spins. Progressive difficulty from Easy to Nightmare. 3 lives, combo multiplier, global grading.</p>
-        <ul class="game-card-features">
-          <li>Timing Game</li>
-          <li>5 Difficulties</li>
-          <li>Score Sharing</li>
-          <li>S~D Grading</li>
-        </ul>
-        <span class="game-card-arrow">→</span>
-      </a>
+      <div class="games-top">
+        <a class="game-card symmetry" href="https://symmetry.salmonholic.com">
+          <span class="game-card-icon">⚔️</span>
+          <div class="game-card-title">SYMMETRY</div>
+          <div class="game-card-tagline">키워라. 싸워라. 정복하라.</div>
+          <p class="game-card-desc">AI 키우기 RPG — 11개 직업, 3인 파티, 무한 성장. 장비 커스텀, 스킬 습득, 무한의 탑과 PvP까지.</p>
+          <ul class="game-card-features">
+            <li>AI RPG</li>
+            <li>11 직업</li>
+            <li>무한 성장</li>
+            <li>PvP 대전</li>
+          </ul>
+          <span class="game-card-arrow">→</span>
+        </a>
+        <a class="game-card skillcheck" href="https://skillcheck.salmonholic.com">
+          <span class="game-card-icon">⚡</span>
+          <div class="game-card-title">Skill Check</div>
+          <div class="game-card-tagline">Test your reflexes.</div>
+          <p class="game-card-desc">Inspired by Dead by Daylight — hit the timing window as the needle spins. Progressive difficulty from Easy to Nightmare.</p>
+          <ul class="game-card-features">
+            <li>Timing Game</li>
+            <li>5 Difficulties</li>
+            <li>Score Sharing</li>
+            <li>S~D Grading</li>
+          </ul>
+          <span class="game-card-arrow">→</span>
+        </a>
+      </div>
     </div>
   </div>
 </section>
@@ -738,6 +763,7 @@ footer a:hover { color: var(--text); }
     <a href="https://tools.salmonholic.com">Salmon Tools</a> · 
     <a href="https://qube.salmonholic.com">QUBE</a> · 
     <a href="https://yesno.salmonholic.com">YesNo</a> · 
+    <a href="https://symmetry.salmonholic.com">SYMMETRY</a> · 
     <a href="https://skillcheck.salmonholic.com">Skill Check</a>
   </p>
   <p>© 2026 Salmonholic. Crafted with precision and zero frameworks.</p>
